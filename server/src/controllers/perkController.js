@@ -69,8 +69,49 @@ export async function createPerk(req, res, next) {
 }
 // TODO
 // Update an existing perk by ID and validate only the fields that are being updated 
+//export async function updatePerk(req, res, next) {
+  //update the title 
+  //first request.body
+  //then validate
+  //then update 
+  //make sure if no category entered , it doesnt turn into default    
+
+
+//}
 export async function updatePerk(req, res, next) {
-  
+  try {
+    const { id } = req.params;
+
+    // Allow partial validation: only validate fields that exist in body
+    const partialSchema = perkSchema.fork(
+      Object.keys(perkSchema.describe().keys),
+      (schema) => schema.optional()
+    );
+
+    const { value, error } = partialSchema.validate(req.body, { abortEarly: false });
+    if (error) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    if (!value.title) {
+      return res.status(400).json({ message: "Title is required to update" });
+    }
+
+    // Only update the title field
+    const updatedPerk = await Perk.findByIdAndUpdate(
+      id,
+      { $set: { title: value.title } },
+      { new: true }
+    );
+
+    if (!updatedPerk) {
+      return res.status(404).json({ message: "Perk not found" });
+    }
+
+    res.json({ perk: updatedPerk });
+  } catch (err) {
+    next(err);
+  }
 }
 
 
